@@ -124,7 +124,7 @@
         popupContent += '<br><b>Summary: </b>' + layer.feature.properties.summary;
       }
       if (layer.feature.properties.link !== undefined && layer.feature.properties.link !== '') {
-        popupContent += '<a href="' + layer.feature.properties.link + '">Learn more</a>';
+        popupContent += '<a href="' + layer.feature.properties.link + '" target="_blank">Learn more</a>';
       }
 
       layer.bindPopup(popupContent);
