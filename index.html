@@ -1,168 +1,160 @@
 <!DOCTYPE html>
 <html>
 <head>
-<base target="_parent" />
-<meta charset=utf-8 />
-<title>OTI Global</title>
-<meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
-<script src='https://api.tiles.mapbox.com/mapbox.js/v1.6.3/mapbox.js'></script>
-<link href='https://api.tiles.mapbox.com/mapbox.js/v1.6.3/mapbox.css' rel='stylesheet' />
-<style>
-  body { margin:0; padding:0; }
-  #map { position:absolute; top:0; bottom:0; width:100%; }
+  <meta charset="utf-8" />
+  <title>OTI Global</title>
+  <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+  <script src='https://api.mapbox.com/mapbox.js/v3.3.1/mapbox.js'></script>
+  <link href='https://api.mapbox.com/mapbox.js/v3.3.1/mapbox.css' rel='stylesheet' />
+  <style>
+    body { margin: 0; padding: 0; }
+    #map { position: absolute; top: 0; bottom: 0; width: 100%; }
 
-.leaflet-popup-content .marker-title {
-  font-size: 14px;
-}
+    /* CSS for map popups */
+    .leaflet-popup-content .marker-title {
+      font-size: 14px;
+    }
 
-.leaflet-popup-content {
-  padding: 10px 10px 10px;
-  margin:0;
-  line-height:inherit;
-}
+    .leaflet-popup-content {
+      padding: 10px;
+      margin: 0;
+      line-height: inherit;
+    }
 
-</style>
+    /* CSS for legend */
+    .legend label {
+      display: inline-block;
+      font: 12px/20px 'Helvetica Neue', Arial, Helvetica, sans-serif;
+      text-align: left;
+      vertical-align: middle;
+      color: rgba(0, 0, 0, .75);
+      padding-left: 5px;
+      margin-bottom: 13px;
+    }
+
+    .legend span {
+      display: inline-block;
+      height: 20px;
+      width: 20px;
+    }
+
+    .legend-row {
+      display: block;
+      height: 25px;
+    }
+
+    .legend-title {
+      display: block;
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 5px;
+    }
+  </style>
 </head>
 <body>
+  <!-- Legend -->
+  <div id='legend' style='display:none;'>
+    <span class='legend-title'>OTI Program Status</span>
+    <nav class='legend clearfix'>
+      <div class='legend-row'>
+        <span style='background:#984ea3;'></span>
+        <label>Active</label>
+      </div>
+      <div class='legend-row'>
+        <span style='background:#ff7f00;'></span>
+        <label>Closed</label>
+      </div>
+    </nav>
+  </div>
 
-<style>
-.legend label {
-  display:inline-block;
-  font: 12px/20px 'Helvetica Neue',Arial,Helvetica,sans-serif;
-  text-align: left;
-  vertical-align: middle;
-  color:rgba(0,0,0,.75);
-  padding-left:5px;
-  margin-bottom:13px;
-}
-.legend span {
-  display:inline-block;
-  height:20px;
-  width:20px;
-}
-.legend-row {
-  display:block;
-  height:25px;
-}
-.legend-title {
-  display:block;
-  font-size:14px;
-  font-weight:700;
-  margin-bottom:5px;
-}
-</style>
+  <!-- Map container -->
+  <div id='map'></div>
 
-<div id='legend' style='display:none;'>
-  <span class='legend-title'>OTI Program Status</span>
-  <nav class='legend clearfix'>
-    <div class='legend-row'>
-    <span style='background:#984ea3;'></span>
-    <label>Active</label>
-    </div>
-    <div class ='legend-row'>
-    <span style='background:#ff7f00;'></span>
-    <label>Closed</label>
-    </div>
-</div>
+  <script>
+    var closedCol = '#ff7f00';
+    var activeCol = '#984ea3';
+    
+    // Create a map instance with Mapbox Light tileset
+    var map = L.mapbox.map('map', 'mapbox.light', {
+      accessToken: 'pk.eyJ1Ijoib3RpZ2l1IiwiYSI6ImNraGtrZGl0OTB6bGQycXB0b3o5ejZsN2gifQ.LS99H1PGbfytIDy6zlC9NA'
+    }).setView([10, 25], 2);
 
-<div id='map'></div>
-<script>
-//var activeCol = '#0075A2'
-//var closedCol = '#6CAD5F'
-var closedCol = '#ff7f00'
-var activeCol = '#984ea3'
-var map = L.mapbox.map('map', 'otigiu.oti-global')
-    .setView([10, 25], 2);
+    // Add legend control to the map
+    map.legendControl.addLegend(document.getElementById('legend').innerHTML);
 
-map.legendControl.addLegend(document.getElementById('legend').innerHTML);
+    // Create a popup instance
+    var popup = new L.Popup({ autoPan: false });
 
-var popup = new L.Popup({ autoPan: false });
-
-var otiLayer = L.mapbox.featureLayer()
-	.loadURL('global-oti.geojson')
-	.setFilter(function(feature) {
-		return feature.properties.oti_name !== null;
-	})
-	.on('ready',function(){
-		otiLayer.eachLayer(function(layer) {
-			onEachFeature(layer.feature,layer);
-
-
-		})
-		 
-			
-	})
-	.addTo(map);
-
-
-
-   function getStyle(feature) {
-       return {
-           weight: 1,
-           opacity: 0.5,
-           color: '#eee',
-           fillOpacity: 0.6,
-           fillColor: getColor(feature.properties.status)
-       };
-   }
-
-  // // get color depending on program status
-   function getColor(s) {
-      return s == 'Active' ? activeCol :
-          s  == 'Closed' ? closedCol :
-          '#000';
-  }
-
-   function onEachFeature(feature, layer) {
-
-	  	layer.setStyle(getStyle(feature));
-
-
-       var popupContent = '';
-        popupContent += '<div class="marker-title">' + layer.feature.properties.oti_name + '</div>'; 
-        popupContent += '<b>' + 'Status: ' + '</b>' + layer.feature.properties.status;
-        if (layer.feature.properties.summary !== undefined && layer.feature.properties.summary > '') {
-          popupContent += '<br>' + '<b>Summary: </b>' + layer.feature.properties.summary;
-        }
-        if (layer.feature.properties.link !== undefined && layer.feature.properties.link > '') {
-          popupContent += '<a href="' + layer.feature.properties.link + '">' + ' Learn more' + '</a>';
-        }
-
-        layer.bindPopup(popupContent);
-
-        layer.on({
-           mousemove: mousemove,
-           mouseout: mouseout,
+    // Create a feature layer
+    var otiLayer = L.mapbox.featureLayer()
+      .loadURL('global-oti.geojson')
+      .setFilter(function(feature) {
+        return feature.properties.oti_name !== null;
+      })
+      .on('ready', function() {
+        otiLayer.eachLayer(function(layer) {
+          onEachFeature(layer.feature, layer);
         });
-        
-        };     
+      })
+      .addTo(map);
 
-  function mousemove(e) {
+    // Function to set the style of each feature
+    function getStyle(feature) {
+      return {
+        weight: 1,
+        opacity: 0.5,
+        color: '#eee',
+        fillOpacity: 0.6,
+        fillColor: getColor(feature.properties.status)
+      };
+    }
+
+    // Function to determine the color based on the feature's status
+    function getColor(status) {
+      return status === 'Active' ? activeCol : status === 'Closed' ? closedCol : '#000';
+    }
+
+    // Function to bind popup and set style for each feature layer
+    function onEachFeature(feature, layer) {
+      layer.setStyle(getStyle(feature));
+
+      var popupContent = '<div class="marker-title">' + layer.feature.properties.oti_name + '</div>';
+      popupContent += '<b>Status: </b>' + layer.feature.properties.status;
+      if (layer.feature.properties.summary !== undefined && layer.feature.properties.summary !== '') {
+        popupContent += '<br><b>Summary: </b>' + layer.feature.properties.summary;
+      }
+      if (layer.feature.properties.link !== undefined && layer.feature.properties.link !== '') {
+        popupContent += '<a href="' + layer.feature.properties.link + '">Learn more</a>';
+      }
+
+      layer.bindPopup(popupContent);
+
+      layer.on({
+        mousemove: mousemove,
+        mouseout: mouseout
+      });
+    }
+
+    // Function to handle mousemove event on feature layer
+    function mousemove(e) {
       var layer = e.target;
-
       popup.setLatLng(e.latlng);
-
-      // highlight feature
       layer.setStyle({
-          weight: 2,
-          fillOpacity: 1
+        weight: 2,
+        fillOpacity: 1
       });
-  }
+    }
 
-  function mouseout(e) {
+    // Function to handle mouseout event on feature layer
+    function mouseout(e) {
       var layer = e.target;
-
-      // highlight feature
       layer.setStyle({
-          weight: 1,
-          fillOpacity: 0.5, 
-          color: '#eee',
-          opacity: 0.5
+        weight: 1,
+        fillOpacity: 0.5,
+        color: '#eee',
+        opacity: 0.5
       });
-  }
-
-</script>
-
-
+    }
+  </script>
 </body>
 </html>
